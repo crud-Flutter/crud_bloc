@@ -1,0 +1,7 @@
+builders:
+  bloc:
+    import: "package:crud_bloc/builder.dart"
+    builder_factories: ["blocBuilder"]
+    build_extensions: {".dart": [".bloc.dart"]}
+    auto_apply: dependents
+    build_to: source
