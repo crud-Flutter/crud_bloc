@@ -98,6 +98,10 @@ class GenerateBlocClass extends GenerateEntityClassAbstract {
     generateClass.writeln('}');
   }
 
+  void _list() {
+    generateClass.writeln('get $nameLowerCase' 's => _repository.$nameLowerCase''s;');
+  }
+
   @override
   String build() {
     _constructor();
@@ -105,6 +109,7 @@ class GenerateBlocClass extends GenerateEntityClassAbstract {
     _setEntity();
     _setters();
     _gettters();
+    _list();
     _insertOrUpdate();
     _dispose();
     return super.build();
