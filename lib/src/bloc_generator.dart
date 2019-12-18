@@ -8,7 +8,8 @@ import 'package:source_gen/source_gen.dart';
 
 class BlocGenerator extends GeneratorForAnnotation<Entity> {
   @override
-  FutureOr<String> generateForAnnotatedElement(Element element, ConstantReader annotation, BuildStep buildStep) {
+  FutureOr<String> generateForAnnotatedElement(
+      Element element, ConstantReader annotation, BuildStep buildStep) {
     var generateClass = GenerateBlocClass(element.name);
     var fieldAnnotation = TypeChecker.fromRuntime(Field);
     for (var field in (element as ClassElement).fields) {
@@ -17,10 +18,11 @@ class BlocGenerator extends GeneratorForAnnotation<Entity> {
     }
     return generateClass.build();
   }
-  
 }
 
 class GenerateBlocClass extends GenerateEntityClassAbstract {
+  Map<String, String> fieldsIgnored = {};
+
   GenerateBlocClass(String name)
       : super(name, classSuffix: 'Bloc', parentClass: 'BlocBase') {
     generateClass.writeln('String _documentId;');
@@ -46,6 +48,9 @@ class GenerateBlocClass extends GenerateEntityClassAbstract {
   @override
   void generateFieldDeclaration(type, name, {bool persistField = false}) {
     generateClass.writeln('$type ' + (persistField ? '_' : '') + '$name;');
+    if (!persistField) {
+      fieldsIgnored[name] = type;
+    }
   }
 
   void _gettters() {
@@ -67,6 +72,12 @@ class GenerateBlocClass extends GenerateEntityClassAbstract {
   void _setEntity() {
     generateClass.writeln('void set$entityClass($entityClassInstance) {');
     generateClass.writeln('_documentId = $entityInstance.documentId();');
+    fields.forEach((field, type) {
+      generateClass.writeln('set$field($entityInstance.$field);');
+    });
+    fieldsIgnored.forEach((field, type){
+      generateClass.writeln('$field = $entityInstance.$field;');
+    });
     generateClass.writeln('}');
   }
 
@@ -99,7 +110,8 @@ class GenerateBlocClass extends GenerateEntityClassAbstract {
   }
 
   void _list() {
-    generateClass.writeln('get $nameLowerCase' 's => _repository.$nameLowerCase''s;');
+    generateClass
+        .writeln('get $nameLowerCase' 's => _repository.$nameLowerCase' 's;');
   }
 
   @override
