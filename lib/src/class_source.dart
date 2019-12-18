@@ -7,54 +7,54 @@ class GenerateBlocClass extends GenerateEntityClassAbstract {
   }
 
   @override
-  addImports() {
+  void addImports() {
     importEntity();
     importGenerate('repository');
     generateClass.writeln('import \'package:bloc_pattern/bloc_pattern.dart\';');
     generateClass.writeln('import \'package:rxdart/rxdart.dart\';');
   }
 
-  _constructor() {
+  void _constructor() {
     generateClass.writeln('$name() {');
     fields.forEach((field, type) {
-      generateClass.writeln(
-          '_$field' + 'Controller.listen((value) => _$field = value);');
+      generateClass
+          .writeln('_$field' 'Controller.listen((value) => _$field = value);');
     });
     generateClass.writeln('}');
   }
 
   @override
-  generateFieldDeclaration(type, name, {bool persistField: false}) {
+  void generateFieldDeclaration(type, name, {bool persistField = false}) {
     generateClass.writeln('$type ' + (persistField ? '_' : '') + '$name;');
   }
 
-  _gettters() {
+  void _gettters() {
     fields.forEach((field, type) {
       generateClass
-          .writeln('var _$field' + 'Controller = BehaviorSubject<$type>();');
-      generateClass.writeln(
-          'Stream<$type> get $field => _$field' + 'Controller.stream;');
+          .writeln('var _$field' 'Controller = BehaviorSubject<$type>();');
+      generateClass
+          .writeln('Stream<$type> get $field => _$field' 'Controller.stream;');
     });
   }
 
-  _setters() {
+  void _setters() {
     fields.forEach((field, type) {
-      generateClass.writeln('void set$field($type value) => _$field' +
+      generateClass.writeln('void set$field($type value) => _$field'
           'Controller.sink.add(value);');
     });
   }
 
-  _setEntity() {
+  void _setEntity() {
     generateClass.writeln('void set$entityClass($entityClassInstance) {');
     generateClass.writeln('_documentId = $entityInstance.documentId();');
     generateClass.writeln('}');
   }
 
-  _insertOrUpdate() {
+  void _insertOrUpdate() {
     generateClass.writeln('void insertOrUpdate() {');
     generateClass.writeln('var $entityInstance = $entityClass()');
     fields.forEach((field, type) {
-        generateClass.writeln('..$field = _$field');
+      generateClass.writeln('..$field = _$field');
     });
     generateClass.writeln(';');
     generateClass.writeln('if (_documentId?.isEmpty ?? true) {');
@@ -65,14 +65,14 @@ class GenerateBlocClass extends GenerateEntityClassAbstract {
     generateClass.writeln('}');
   }
 
-  _repository() {
-    generateClass.writeln('var _repository = $classPrefix'+'Repository();');
+  void _repository() {
+    generateClass.writeln('var _repository = $classPrefix' 'Repository();');
   }
 
-  _dispose() {
+  void _dispose() {
     generateClass.writeln('void dispose() {');
     fields.forEach((field, type) {
-      generateClass.writeln('_$field'+'Controller.close();');
+      generateClass.writeln('_$field' 'Controller.close();');
     });
     generateClass.writeln('super.dispose();');
     generateClass.writeln('}');
@@ -80,13 +80,13 @@ class GenerateBlocClass extends GenerateEntityClassAbstract {
 
   @override
   String build() {
-    this._constructor();
-    this._repository();
-    this._setEntity();
-    this._setters();
-    this._gettters();
-    this._insertOrUpdate();    
-    this._dispose();
+    _constructor();
+    _repository();
+    _setEntity();
+    _setters();
+    _gettters();
+    _insertOrUpdate();
+    _dispose();
     return super.build();
   }
 }
