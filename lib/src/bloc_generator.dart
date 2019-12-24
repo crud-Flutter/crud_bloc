@@ -55,8 +55,9 @@ class BlocGenerator
           type: MethodType.getter,
           lambda: true,
           body: Code('_${field.name}Controller.stream'));
-      declareMethod(field.name,
-          type: MethodType.setter,
+      declareMethod('set${field.name}',
+        returns: refer('void'),
+          // type: MethodType.setter,
           requiredParameters: [
             Parameter((b) => b
               ..name = 'value'
@@ -82,7 +83,7 @@ class BlocGenerator
     var entityCode = BlockBuilder();
     elementAsClass.fields.forEach((field) {
       entityCode.statements
-          .add(Code('${field.name} = ${entityInstance}.${field.name};'));
+          .add(Code('set${field.name}(${entityInstance}.${field.name});'));
     });
     if (entityCode.statements.isNotEmpty) {
       entityCode.statements
