@@ -33,6 +33,7 @@ class BlocGenerator
     // return generateClass.build();
     return "import 'package:bloc_pattern/bloc_pattern.dart';"
             "import 'package:rxdart/rxdart.dart';"
+            "import '${element.name.toLowerCase()}.entity.dart';" 
             "import '${element.name.toLowerCase()}.repository.dart';" +
         build();
   }
