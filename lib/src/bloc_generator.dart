@@ -50,7 +50,7 @@ class BlocGenerator
     elementAsClass.fields.forEach((field) {
       declareField(refer(field.type.name), '_${field.name}');
       declareField(refer('var'), '_${field.name}Controller',
-          assignment: Code('BehaviorSubject<${field.type.name}>()'));
+          assignment: Code('BehaviorSubject<${field.type.name}>(sync: true)'));
       declareMethod('out${field.name}',
           returns: refer('Stream<${field.type.name}>'),
           type: MethodType.getter,
