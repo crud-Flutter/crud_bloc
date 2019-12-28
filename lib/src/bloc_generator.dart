@@ -24,13 +24,6 @@ class BlocGenerator
     _methodInserOrUpdate();
     _methodDispose();
     _methodDelete();
-    // var generateClass = GenerateBlocClass(element.name);
-    // var fieldAnnotation = TypeChecker.fromRuntime(Field);
-    // for (var field in (element as ClassElement).fields) {
-    //   generateClass.declareField(field.type.name, field.name,
-    //       persistField: fieldAnnotation.hasAnnotationOfExact(field));
-    // }
-    // return generateClass.build();
     return "import 'package:bloc_pattern/bloc_pattern.dart';"
             "import 'package:rxdart/rxdart.dart';"
             "import '${element.name.toLowerCase()}.entity.dart';" 
