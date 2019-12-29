@@ -10,7 +10,6 @@ import 'package:source_gen/source_gen.dart';
 
 class BlocGenerator
     extends GenerateEntityClassForAnnotation<annotation.Entity> {
-  
   @override
   FutureOr<String> generateForAnnotatedElement(
       Element element, ConstantReader annotation, BuildStep buildStep) {
@@ -18,20 +17,20 @@ class BlocGenerator
     name = '${element.name}Bloc';
     this.element = element;
     extend = refer('BlocBase');
+    addImportPackage('package:bloc_pattern/bloc_pattern.dart');
+    addImportPackage('${element.name.toLowerCase()}.entity.dart');
     _declareField();
     _constructor();
     _methodSetEntity();
     _methodInserOrUpdate();
     _methodDispose();
     _methodDelete();
-    return "import 'package:bloc_pattern/bloc_pattern.dart';"
-            "import 'package:rxdart/rxdart.dart';"
-            "import '${element.name.toLowerCase()}.entity.dart';"
-            "import '${element.name.toLowerCase()}.repository.dart';" +
-        build();
+    return build();
   }
 
   void _declareField() {
+    addImportPackage('${element.name.toLowerCase()}.repository.dart');
+    addImportPackage('package:rxdart/rxdart.dart');
     declareField(refer('String'), '_documentId');
     declareField(refer('var'), '_repository',
         assignment: Code('${element.name}Repository()'));
@@ -90,7 +89,8 @@ class BlocGenerator
           requiredParameters: [
             Parameter((b) => b
               ..name = entityInstance
-              ..type = refer(entityClass))
+              ..type = refer(
+                  entityClass, '${element.name.toLowerCase()}.entity.dart'))
           ],
           body: entityCode.build());
     }
