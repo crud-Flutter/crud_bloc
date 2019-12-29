@@ -14,6 +14,7 @@ class BlocGenerator
   @override
   FutureOr<String> generateForAnnotatedElement(
       Element element, ConstantReader annotation, BuildStep buildStep) {
+    init();
     name = '${element.name}Bloc';
     this.element = element;
     extend = refer('BlocBase');
