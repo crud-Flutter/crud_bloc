@@ -10,8 +10,7 @@ import 'package:source_gen/source_gen.dart';
 
 class BlocGenerator
     extends GenerateEntityClassForAnnotation<annotation.Entity> {
-  TypeChecker fieldAnnotation = TypeChecker.fromRuntime(annotation.Field);
-
+  
   @override
   FutureOr<String> generateForAnnotatedElement(
       Element element, ConstantReader annotation, BuildStep buildStep) {
@@ -26,7 +25,7 @@ class BlocGenerator
     _methodDelete();
     return "import 'package:bloc_pattern/bloc_pattern.dart';"
             "import 'package:rxdart/rxdart.dart';"
-            "import '${element.name.toLowerCase()}.entity.dart';" 
+            "import '${element.name.toLowerCase()}.entity.dart';"
             "import '${element.name.toLowerCase()}.repository.dart';" +
         build();
   }
@@ -43,14 +42,18 @@ class BlocGenerator
     elementAsClass.fields.forEach((field) {
       declareField(refer(field.type.name), '_${field.name}');
       declareField(refer('var'), '_${field.name}Controller',
-          assignment: Code('BehaviorSubject<${field.type.name}>(sync: true)'));
+          assignment: Code('BehaviorSubject<${field.type.name}>(' +
+              (['DateTime', 'Date', 'Date'].contains(field.type.name)
+                  ? 'sync: true'
+                  : '') +
+              ')'));
       declareMethod('out${field.name}',
           returns: refer('Stream<${field.type.name}>'),
           type: MethodType.getter,
           lambda: true,
           body: Code('_${field.name}Controller.stream'));
       declareMethod('set${field.name}',
-        returns: refer('void'),
+          returns: refer('void'),
           // type: MethodType.setter,
           requiredParameters: [
             Parameter((b) => b
@@ -95,7 +98,7 @@ class BlocGenerator
   void _methodInserOrUpdate() {
     var insertOrUpdateCode = BlockBuilder();
     elementAsClass.fields.forEach((field) {
-      if (fieldAnnotation.hasAnnotationOfExact(field)) {
+      if (isFieldPersist(field)) {
         insertOrUpdateCode.statements
             .add(Code('..${field.name} = _${field.name}'));
       }
