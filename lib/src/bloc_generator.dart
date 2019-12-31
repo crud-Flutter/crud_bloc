@@ -25,6 +25,8 @@ class BlocGenerator
     _methodInserOrUpdate();
     _methodDispose();
     _methodDelete();
+    _methodListManyToOne();
+    _methodUpdateManyToOneByDisplayField();
     return build();
   }
 
@@ -40,36 +42,48 @@ class BlocGenerator
         type: MethodType.getter,
         body: Code('_repository.list()'));
     elementAsClass.fields.forEach((field) {
-      declareField(refer(field.type.name), '_${field.name}');
-      declareField(refer('var'), '_${field.name}Controller',
-          assignment: Code('BehaviorSubject<${field.type.name}>(' +
+      var fieldName = field.name;
+      var type = field.type.name;
+      if (isManyToOneField(field)) {
+        fieldName += 'Entity';
+        type += 'Entity';
+        addImportPackage(
+            '../${field.type.name.toLowerCase()}/${field.type.name.toLowerCase()}.entity.dart');
+      }
+      declareField(refer(type), '_${fieldName}');
+      declareField(refer('var'), '_${fieldName}Controller',
+          assignment: Code('BehaviorSubject<$type>(' +
               (['DateTime', 'Date', 'Date'].contains(field.type.name)
                   ? 'sync: true'
                   : '') +
               ')'));
-      declareMethod('out${field.name}',
-          returns: refer('Stream<${field.type.name}>'),
+      declareMethod('out${fieldName}',
+          returns: refer('Stream<$type>'),
           type: MethodType.getter,
           lambda: true,
-          body: Code('_${field.name}Controller.stream'));
-      declareMethod('set${field.name}',
+          body: Code('_${fieldName}Controller.stream'));
+      declareMethod('set${fieldName}',
           returns: refer('void'),
           // type: MethodType.setter,
           requiredParameters: [
             Parameter((b) => b
               ..name = 'value'
-              ..type = refer(field.type.name))
+              ..type = refer(type))
           ],
           lambda: true,
-          body: Code('_${field.name}Controller.sink.add(value)'));
+          body: Code('_${fieldName}Controller.sink.add(value)'));
     });
   }
 
   void _constructor() {
     var constructorVar = BlockBuilder();
     elementAsClass.fields.forEach((field) {
+      var fieldName = field.name;
+      if (isManyToOneField(field)) {
+        fieldName += 'Entity';
+      }
       constructorVar.statements.add(Code(
-          '_${field.name}Controller.listen((value) => _${field.name} = value);'));
+          '_${fieldName}Controller.listen((value) => _${fieldName} = value);'));
     });
     if (constructorVar.statements.length > 0) {
       declareConstructor(body: constructorVar.build());
@@ -79,8 +93,12 @@ class BlocGenerator
   void _methodSetEntity() {
     var entityCode = BlockBuilder();
     elementAsClass.fields.forEach((field) {
+      var fieldName = field.name;
+      if (isManyToOneField(field)) {
+        fieldName += 'Entity';
+      }
       entityCode.statements
-          .add(Code('set${field.name}(${entityInstance}.${field.name});'));
+          .add(Code('set$fieldName(${entityInstance}.$fieldName);'));
     });
     if (entityCode.statements.isNotEmpty) {
       entityCode.statements
@@ -100,8 +118,11 @@ class BlocGenerator
     var insertOrUpdateCode = BlockBuilder();
     elementAsClass.fields.forEach((field) {
       if (isFieldPersist(field)) {
-        insertOrUpdateCode.statements
-            .add(Code('..${field.name} = _${field.name}'));
+        var fieldName = field.name;
+        if (isManyToOneField(field)) {
+          fieldName += 'Entity';
+        }
+        insertOrUpdateCode.statements.add(Code('..$fieldName = _$fieldName'));
       }
     });
     if (insertOrUpdateCode.statements.isNotEmpty) {
@@ -133,10 +154,48 @@ class BlocGenerator
         body: Code('_repository.delete(documentId)'));
   }
 
+  void _methodListManyToOne() {
+    elementAsClass.fields.forEach((field) {
+      if (isManyToOneField(field)) {
+        addImportPackage(
+            '../${field.type.name.toLowerCase()}/${field.type.name.toLowerCase()}.repository.dart');
+        declareMethod('list${field.type.name}',
+            returns: refer('Stream<List<${field.type.name}Entity>>'),
+            lambda: true,
+            body: Code("${field.type.name}Repository().list()"));
+      }
+    });
+  }
+
+  _methodUpdateManyToOneByDisplayField() {
+    elementAsClass.fields.forEach((field) {
+      if (isManyToOneField(field)) {
+        var displayField = getDisplayField(annotation.ManyToOne, field);
+        declareMethod('update${field.type.name}by$displayField',
+            requiredParameters: [
+              Parameter((b) => b
+                ..name = '${field.name}Entity'
+                ..type = refer('${field.type.name}Entity'))
+            ],
+            body: Block((b) => b
+              ..statements.addAll([
+                Code(
+                    'if (${field.name}Entity.$displayField == _${field.name}Entity?.$displayField) {'),
+                    Code('set${field.name}Entity(${field.name}Entity);'),
+                    Code('}')
+              ])));
+      }
+    });
+  }
+
   void _methodDispose() {
     var disposeCode = BlockBuilder();
     elementAsClass.fields.forEach((field) {
-      disposeCode.statements.add(Code('_${field.name}Controller.close();'));
+      var fieldName = field.name;
+      if (isManyToOneField(field)) {
+        fieldName += 'Entity';
+      }
+      disposeCode.statements.add(Code('_${fieldName}Controller.close();'));
     });
     if (disposeCode.statements.isNotEmpty) {
       disposeCode.statements.add(Code('super.dispose();'));
