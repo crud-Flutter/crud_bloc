@@ -26,6 +26,7 @@ class BlocGenerator
     _methodDispose();
     _methodDelete();
     _methodListManyToOne();
+    _methodListOneToMany();
     _methodUpdateManyToOneByDisplayField();
     return build();
   }
@@ -42,19 +43,26 @@ class BlocGenerator
         type: MethodType.getter,
         body: Code('_repository.list()'));
     elementAsClass.fields.forEach((field) {
+      var type = field.type.name;
+      var name = '_${field.name}';
       if (isManyToOneField(field)) {
         addImportPackage(
             '../${field.type.name.toLowerCase()}/${field.type.name.toLowerCase()}.dart');
+      } else if (isOneToManyField(field)) {
+        type += '<${getGenericTypes(field.type).first.name}>';
+        addImportPackage(
+            '../${getGenericTypes(field.type).first.name.toLowerCase()}/'
+            '${getGenericTypes(field.type).first.name.toLowerCase()}.dart');
       }
-      declareField(refer(field.type.name), '_${field.name}');
+      declareField(refer(type), name);
       declareField(refer('var'), '_${field.name}Controller',
-          assignment: Code('BehaviorSubject<${field.type.name}>(' +
+          assignment: Code('BehaviorSubject<$type>(' +
               (['DateTime', 'Date', 'Date'].contains(field.type.name)
                   ? 'sync: true'
                   : '') +
               ')'));
       declareMethod('out${field.name}',
-          returns: refer('Stream<${field.type.name}>'),
+          returns: refer('Stream<$type>'),
           type: MethodType.getter,
           lambda: true,
           body: Code('_${field.name}Controller.stream'));
@@ -64,7 +72,7 @@ class BlocGenerator
           requiredParameters: [
             Parameter((b) => b
               ..name = 'value'
-              ..type = refer(field.type.name))
+              ..type = refer(type))
           ],
           lambda: true,
           body: Code('_${field.name}Controller.sink.add(value)'));
@@ -106,7 +114,8 @@ class BlocGenerator
     var insertOrUpdateCode = BlockBuilder();
     elementAsClass.fields.forEach((field) {
       if (isFieldPersist(field)) {
-        insertOrUpdateCode.statements.add(Code('..${field.name} = _${field.name}'));
+        insertOrUpdateCode.statements
+            .add(Code('..${field.name} = _${field.name}'));
       }
     });
     if (insertOrUpdateCode.statements.isNotEmpty) {
@@ -143,12 +152,31 @@ class BlocGenerator
       if (isManyToOneField(field)) {
         addImportPackage(
             '../${field.type.name.toLowerCase()}/${field.type.name.toLowerCase()}.repository.dart');
-            addImportPackage(
+        addImportPackage(
             '../${field.type.name.toLowerCase()}/${field.type.name.toLowerCase()}.entity.dart');
         declareMethod('list${field.type.name}',
             returns: refer('Stream<List<${field.type.name}Entity>>'),
             lambda: true,
             body: Code('${field.type.name}Repository().list()'));
+      }
+    });
+  }
+
+  void _methodListOneToMany() {
+    elementAsClass.fields.forEach((field) {
+      if (isOneToManyField(field)) {
+        addImportPackage(
+            '../${getGenericTypes(field.type).first.name.toLowerCase()}'
+            '/${getGenericTypes(field.type).first.name.toLowerCase()}.repository.dart');
+        addImportPackage(
+            '../${getGenericTypes(field.type).first.name.toLowerCase()}'
+            '/${getGenericTypes(field.type).first.name.toLowerCase()}.entity.dart');
+        declareMethod('list${getGenericTypes(field.type).first}',
+            returns: refer(
+                'Stream<List<${getGenericTypes(field.type).first}Entity>>'),
+            lambda: true,
+            body: Code(
+                '${getGenericTypes(field.type).first}Repository().list()'));
       }
     });
   }
@@ -167,8 +195,8 @@ class BlocGenerator
               ..statements.addAll([
                 Code(
                     'if (${field.name}Entity.$displayField == _${field.name}?.$displayField) {'),
-                    Code('set${field.name}(${field.name}Entity);'),
-                    Code('}')
+                Code('set${field.name}(${field.name}Entity);'),
+                Code('}')
               ])));
       }
     });
